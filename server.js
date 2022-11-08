@@ -1,5 +1,4 @@
 const express = require("express");
-const Datastore = require("nedb");
 const requestify = require("requestify");
 const mongoose = require("mongoose")
 require('dotenv/config')
@@ -18,10 +17,7 @@ requestify.get(url, options).then(function (response) {
 });
 
 const app = express();
-const portNumber = 3000;
-app.listen(process.env.PORT || portNumber, () =>
-  console.log(`Listening at ${portNumber}`)
-);
+
 app.use(express.static("public"));
 app.use(express.json({ limit: "1mb" }));
 
@@ -33,6 +29,10 @@ app.use(express.json({ limit: "1mb" }));
 // Connect to mongoDB with mongoose
 mongoose.connect(process.env.MONGO_URL, () => {
   console.log('connected to DB!')
+  const portNumber = 3000;
+  app.listen(process.env.PORT || portNumber, () =>
+    console.log(`Listening at ${portNumber}`)
+  );
 })
 
 const Schema = mongoose.Schema;
