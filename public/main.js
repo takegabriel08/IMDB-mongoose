@@ -259,14 +259,22 @@ async function openFav() {
   $("#liked-items-container")[0].innerText = "Liked items";
   $("#liked-items-container").toggleClass("show");
 
-  $("<ul/>", {
-    id: "liked-items",
-  }).appendTo("#liked-items-container");
-
   if (listJson.list) {
+    $("<ul/>", {
+      id: "liked-items",
+    }).appendTo("#liked-items-container");
+
     listJson.list.forEach((elm) => {
       $(elm).appendTo("#liked-items");
     });
+
+    const deleteBtn = $("<div/>", {
+      class: "delete-btn",
+      id: "delete-btn",
+      text: `💔`,
+      click: deleteItem,
+    });
+    $("#liked-items #like-btn").replaceWith(deleteBtn);
   }
 
   $(this).toggleClass("hide");
@@ -276,14 +284,6 @@ async function openFav() {
     text: `Close`,
     click: closeFav,
   }).appendTo("#headerBtns");
-
-  const deleteBtn = $("<div/>", {
-    class: "delete-btn",
-    id: "delete-btn",
-    text: `💔`,
-    click: deleteItem,
-  });
-  $("#liked-items #like-btn").replaceWith(deleteBtn);
 }
 
 async function addToFavorites() {
