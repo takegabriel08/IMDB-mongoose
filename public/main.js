@@ -259,11 +259,11 @@ async function openFav() {
   $("#liked-items-container")[0].innerText = "Liked items";
   $("#liked-items-container").toggleClass("show");
 
-  if (listJson.list) {
-    $("<ul/>", {
-      id: "liked-items",
-    }).appendTo("#liked-items-container");
+  $("<ul/>", {
+    id: "liked-items",
+  }).appendTo("#liked-items-container");
 
+  if (listJson.list) {
     listJson.list.forEach((elm) => {
       $(elm).appendTo("#liked-items");
     });
