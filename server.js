@@ -21,12 +21,6 @@ const app = express();
 app.use(express.static("public"));
 app.use(express.json({ limit: "1mb" }));
 
-// const database = new Datastore("database.db");
-// const users = new Datastore("users.db");
-// users.loadDatabase();
-// database.loadDatabase();
-
-// Connect to mongoDB with mongoose
 mongoose.connect(process.env.MONGO_URL, () => {
   console.log('connected to DB!')
   const portNumber = 3000;
