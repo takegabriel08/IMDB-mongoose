@@ -2,6 +2,7 @@ const express = require("express");
 const requestify = require("requestify");
 const mongoose = require("mongoose")
 require('dotenv/config')
+const users = require('./models/User')
 
 // Request to imdb api
 const url = `https://caching.graphql.imdb.com/?operationName=comingSoonMovieQuery&variables=%7B%22movieReleasingOnOrAfter%22%3A%222022-10-26%22%2C%22movieViewerLocation%22%3A%7B%22latLong%22%3A%7B%22lat%22%3A%2245.63%22%2C%22long%22%3A%2225.58%22%7D%2C%22radiusInMeters%22%3A80467%7D%2C%22regionOverride%22%3A%22GB%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22sha256Hash%22%3A%2285a63f89df9b1368af9cbbd5a03ececaf2b34a175dd653119e1cd09c9cfda637%22%2C%22version%22%3A1%7D%7D`;
@@ -28,16 +29,6 @@ mongoose.connect(process.env.MONGO_URL, () => {
     console.log(`Listening at ${portNumber}`)
   );
 })
-
-const Schema = mongoose.Schema;
-const userSchema = new Schema({
-  name: String,
-  email: String,
-  password: String,
-  favList: [],
-  time: Number
-}, { collection: 'users' })
-users = mongoose.model('users', userSchema)
 
 const db = mongoose.connection;
 
