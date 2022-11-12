@@ -3,6 +3,9 @@ const requestify = require("requestify");
 const mongoose = require("mongoose")
 require('dotenv/config')
 const users = require('./models/User')
+const session = require('express-session')
+const MongoDBSession = require('connect-mongodb-session')(session)
+const bcrypt = require('bcryptjs')
 
 // Request to imdb api
 const url = `https://caching.graphql.imdb.com/?operationName=comingSoonMovieQuery&variables=%7B%22movieReleasingOnOrAfter%22%3A%222022-10-26%22%2C%22movieViewerLocation%22%3A%7B%22latLong%22%3A%7B%22lat%22%3A%2245.63%22%2C%22long%22%3A%2225.58%22%7D%2C%22radiusInMeters%22%3A80467%7D%2C%22regionOverride%22%3A%22GB%22%7D&extensions=%7B%22persistedQuery%22%3A%7B%22sha256Hash%22%3A%2285a63f89df9b1368af9cbbd5a03ececaf2b34a175dd653119e1cd09c9cfda637%22%2C%22version%22%3A1%7D%7D`;
@@ -12,15 +15,8 @@ const options = {
     "x-amzn-sessionid": "147-0895637-7720454",
   },
 };
-requestify.get(url, options).then(function (response) {
-  let data = response.getBody();
-  // console.log(data);
-});
 
 const app = express();
-
-app.use(express.static("public"));
-app.use(express.json({ limit: "1mb" }));
 
 mongoose.connect(process.env.MONGO_URL, () => {
   console.log('connected to DB!')
@@ -30,47 +26,125 @@ mongoose.connect(process.env.MONGO_URL, () => {
   );
 })
 
+const store = new MongoDBSession({
+  uri: process.env.MONGO_URL,
+  collection: 'Sessions'
+})
+
 const db = mongoose.connection;
+
+app.use(express.static("public"));
+app.use(express.json({ limit: "1mb" }));
+app.use(session({
+  secret: process.env.SECRET,
+  resave: false,
+  saveUninitialized: false,
+  store: store
+}))
+const isAuth = (req, res, next) => {
+  if (req.session.isAuth) {
+    next()
+  } else {
+    res.json({
+      status: 401,
+      message: "Incorrect credentials",
+    });
+  }
+}
+
+app.post("/", isAuth, (req, res) => {
+  res.json({
+    status: 200,
+    message: "Persisting user",
+    user: req.session.user
+  });
+})
 
 app.get("/imdb", (request, response) => {
   console.log("GET /IMDB from client side");
-
   requestify.get(url, options).then(function (res) {
     response.json(res.getBody());
 
-    // const data = request.body;
-    // const timestamp = Date.now();
-    // data.timestamp = timestamp;
-    // database.insert(data);
   });
 });
 
-app.post("/register", (req, res) => {
+app.post("/logout", async (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      throw err
+    } else {
+      res.json({
+        status: 200,
+        message: "User logged out, db session destroyed",
+      });
+    }
+  })
+})
+
+app.post("/login", async (req, res) => {
+  console.log("POST /login from client side");
+  const reqData = req.body;
+
+  try {
+    const user = await users.find({ email: reqData.email })
+    if (user.length == 0) {
+      res.json({
+        status: 404,
+        message: "User does not exist",
+      });
+      res.end();
+      return;
+    }
+
+    const isMatch = await bcrypt.compare(reqData.password, user[0].password)
+    if (isMatch) {
+      req.session.isAuth = true;
+      req.session.user = user[0]._doc //TODO set max age for cookie
+      res.json({
+        status: 200,
+        message: "Authentication successful",
+        user: user[0]._doc,
+      });
+    } else {
+      res.json({
+        status: 401,
+        message: "Password incorrect",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.json({
+      status: 500,
+      message: error,
+    });
+  }
+});
+
+app.post("/register", async (req, res) => {
   console.log("POST /register from client side");
   try {
     const reqData = req.body;
     reqData.time = Date.now().toString();
     reqData.favList = [];
     console.log("post body", req.body);
-    users.find({ email: req.body.email }, (err, data) => {
-      console.log("Here is the data ", data, data.length);
-      console.log("request data: ", reqData);
-      if (data.length < 1) {
-        console.log("Inserting data to users.db");
-        // users.insert(reqData);
-        db.collection('users').insertOne(reqData);
-        res.json({
-          status: 200,
-          message: "Registration successful",
-        });
-      } else {
-        console.log("Returning error response to client!");
-        res.json({
-          status: 403,
-          message: "User already exists in DB",
-        });
-      }
-    });
+    const user = await users.find({ email: req.body.email })
+
+    if (user == 0) {
+      const hashedPass = await bcrypt.hash(req.body.password, 10)
+      reqData.password = hashedPass;
+      db.collection('users').insertOne(reqData);
+      res.json({
+        status: 200,
+        message: "Registration successful",
+      });
+    } else {
+      console.log("Returning error response to client!");
+      res.json({
+        status: 403,
+        message: "User already exists in DB",
+      });
+    }
+
   } catch (error) {
     console.log(error);
   }
@@ -79,7 +153,7 @@ app.post("/register", (req, res) => {
 app.post("/favList", (req, res) => {
   console.log("POST /favList from client side");
   console.log(req.body);
-  // users.loadDatabase();
+
   users.find({ email: req.body.user }, (err, data) => {
     console.log(data);
     var constcurrentFavList = data[0].favList;
@@ -101,7 +175,6 @@ app.post("/fav", async (req, res) => {
   console.log(req.body);
   const reqData = req.body;
 
-  // users.loadDatabase();
   users.find({ email: reqData.user }, (err, data) => {
     console.log(data);
     var isItemIncluded =
@@ -129,13 +202,11 @@ app.post("/fav", async (req, res) => {
       if (upsert) console.log("upsert: ", upsert);
     }
   );
-  // users.loadDatabase();
 });
 
 app.post("/deleteItem", async (req, res) => {
   console.log("POST /deleteItem from client side");
   console.log(req.body);
-  // users.loadDatabase();
   users.find({ email: req.body.user }, async (err, data) => {
     const favList = data[0].favList;
     const itemToDelete = favList.filter((el) => el.includes(req.body.delete));
@@ -150,41 +221,4 @@ app.post("/deleteItem", async (req, res) => {
       message: "Item deleted",
     });
   });
-  // users.loadDatabase();
-});
-
-app.post("/login", (req, res) => {
-  console.log("POST /login from client side");
-  const reqData = req.body;
-
-  try {
-    users.find({ email: reqData.email }, (err, data) => {
-      if (data.length == 0) {
-        res.json({
-          status: 404,
-          message: "User does not exist",
-        });
-        res.end();
-        return;
-      }
-      if (reqData.password == data[0]?.password) {
-        res.json({
-          status: 200,
-          message: "Authentication successful",
-          user: data[0],
-        });
-      } else {
-        res.json({
-          status: 401,
-          message: "Password incorrect",
-        });
-      }
-    });
-  } catch (error) {
-    console.log(error);
-    res.json({
-      status: 500,
-      message: error,
-    });
-  }
 });
