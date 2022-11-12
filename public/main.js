@@ -170,6 +170,47 @@ async function register() {
 }
 $("#reg-submit").on("click", register);
 
+async function persistUser() {
+  const options = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    // body: JSON.stringify(data),
+  };
+  const response = await fetch("/", options);
+  const json = await response.json();
+  console.log("Registration response from server:", json);
+  if (json.message == "Persisting user") {
+    loggedIn.push(json.user);
+    $("#login").toggleClass("hide");
+    $("#register").toggleClass("hide");
+    $("#logout").toggleClass("show");
+    if ($("#loginContainer")[0].className.includes("display")) {
+      $("#loginContainer").toggleClass("display");
+    }
+
+    $("<h3/>", {
+      class: "logged-user",
+      id: "logged-user",
+      text: `Hello ${loggedIn[0]?.name}`,
+    }).appendTo("#header");
+    $("<div/>", {
+      class: "liked-list",
+      id: "liked",
+      text: `${loggedIn[0]?.name} ❤️`,
+      click: openFav,
+    }).appendTo("#headerBtns");
+    const heartBtn = $("<div/>", {
+      class: "liked-list-btn",
+      id: "like-btn",
+      text: `❤️`,
+      click: addToFavorites,
+    }).appendTo(".item-container #item-modal");
+  }
+}
+persistUser()
+
 const loggedIn = [];
 async function login() {
   const email = $("#email")[0].value;
@@ -344,5 +385,16 @@ async function logout() {
   $("#liked").remove();
   $("#close-list").remove();
   $(".item-container #item-modal").find("#like-btn").remove();
+
+  const options = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: '',
+  };
+  const response = await fetch("/logout", options);
+  const json = await response.json();
+  console.log("/fav response from server:", json);
 }
 $("#logout").on("click", logout);
