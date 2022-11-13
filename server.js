@@ -39,7 +39,8 @@ app.use(session({
   secret: process.env.SECRET,
   resave: false,
   saveUninitialized: false,
-  store: store
+  store: store,
+  cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 /*Cookie age one week*/ }
 }))
 const isAuth = (req, res, next) => {
   if (req.session.isAuth) {
