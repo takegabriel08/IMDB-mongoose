@@ -176,7 +176,6 @@ async function persistUser() {
     headers: {
       "Content-Type": "application/json",
     },
-    // body: JSON.stringify(data),
   };
   const response = await fetch("/", options);
   const json = await response.json();
