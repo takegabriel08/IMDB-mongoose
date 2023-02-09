@@ -22,7 +22,7 @@ mongoose.connect(process.env.MONGO_URL, () => {
   console.log('connected to DB!')
   const portNumber = 3000;
   app.listen(process.env.PORT || portNumber, () =>
-    console.log(`Listening at ${portNumber}`)
+    console.log(`Listening at ${portNumber}!`)
   );
 })
 
