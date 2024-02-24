@@ -65,7 +65,7 @@ async function getData() {
       text: `${elm.node.titleText.text}`,
     }).appendTo(itemContainer);
 
-    let genre = elm.node.titleCardGenres.genres.map((genre) => genre.text);
+    let genre = elm.node.titleGenres.genres.map((genre) => genre.text);
     const modalContainer = $("<div/>", {
       class: "modal-container",
       id: "item-modal",
