@@ -65,7 +65,11 @@ async function getData() {
       text: `${elm.node.titleText.text}`,
     }).appendTo(itemContainer);
 
-    let genre = elm.node.titleGenres.genres.map((genre) => genre.text);
+    let genre = "No genre specified";
+    if (elm.node.titleGenres != null) {
+      genre = elm.node.titleGenres.genres?.map((genre) => genre.genre.text);
+    }
+
     const modalContainer = $("<div/>", {
       class: "modal-container",
       id: "item-modal",
@@ -77,7 +81,7 @@ async function getData() {
 
     $("<h1/>", {
       class: "genre",
-      text: `Genre ${genre}`,
+      text: `Genre: ${genre}`,
     }).appendTo(description);
 
     let certificate = elm.node?.certificate?.rating

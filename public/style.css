@@ -171,8 +171,9 @@ header {
 #liked {
   background-color: #fff;
   color: #000;
-  padding: 1px;
-  border-radius: 1px;
+  padding: 7px;
+  border-radius: 3px;
+  cursor: pointer;
 }
 #like-btn {
   right: 0;
