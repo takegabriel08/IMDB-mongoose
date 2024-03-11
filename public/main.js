@@ -49,7 +49,7 @@ async function getData() {
   imdbData = await getImdbResponse();
   const movieArr = imdbData?.data?.comingSoonMovie?.edges;
 
-  movieNo.innerText = `Listing ${movieArr.length} movies!`;
+  movieNo.innerText = `Listing ${movieArr && movieArr.length} movies!`;
 
   movieArr.forEach((elm) => {
     // console.log(elm);
